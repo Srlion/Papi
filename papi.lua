@@ -1,3 +1,5 @@
+---@diagnostics.globals Lyn sam ULib xAdmin sAdmin
+
 local Papi = {}
 
 local player = player
@@ -25,8 +27,12 @@ function Papi.AddPermission(name, min_access, category)
         Lyn.Permission.Add(name, category or "Papi", min_access)
     elseif sam then
         sam.permissions.add(name, category or "Papi", min_access)
+    elseif ULib then
+        ULib.ucl.registerAccess(name, min_access, "A privilege from Papi", category or "Papi")
     elseif xAdmin then
         xAdmin.RegisterPermission(name, name, category) -- No point in fallback to Papi, xAdmin will set it to misc anyway
+    elseif sAdmin then
+        sAdmin.registerPermission(name, category or "Papi", false, true)
     else
         error("No supported admin mod found!")
     end
@@ -58,6 +64,14 @@ function Papi.GetPermissions()
             n = n + 1
         end
         return all
+    elseif sAdmin then
+        local all = {}
+        local n = 1
+        for perm in pairs(sAdmin.getPermissionsKeys()) do
+            all[n] = perm
+            n = n + 1
+        end
+        return all
     end
     error("No supported admin mod found!")
 end
@@ -65,8 +79,15 @@ end
 function Papi.PlayerHasPermission(ply, perm_name)
     if Lyn or sam then
         return PLAYER.HasPermission(ply, perm_name)
+    elseif ULib then
+        -- https://github.com/TeamUlysses/ulib/blob/147657e31a15bdcc5b5fec89dd9f5650aebeb54a/lua/ulib/shared/cami_ulib.lua#L16
+        local priv = perm_name:lower()
+        local result = ULib.ucl.query(ply, priv, true)
+        return not not result
     elseif is_xadmin("1") or is_xadmin("2") then
         return PLAYER.xAdminHasPermission(ply, perm_name)
+    elseif sAdmin then
+        return sAdmin.hasPermission(ply, perm_name)
     end
     return false
 end
@@ -84,6 +105,16 @@ function Papi.GetPlayersWithPermission(perm_name)
             end
         end
         return players
+    elseif ULib then
+        local players = {}
+        local n = 1
+        for _, ply in player.Iterator() do
+            if Papi.PlayerHasPermission(ply, perm_name) then
+                players[n] = ply
+                n = n + 1
+            end
+        end
+        return players
     elseif is_xadmin("1") or is_xadmin("2") then
         local players = {}
         local n = 1
@@ -94,6 +125,8 @@ function Papi.GetPlayersWithPermission(perm_name)
             end
         end
         return players
+    elseif sAdmin then
+        return sAdmin.FindByPerm(perm_name)
     end
     error("No supported admin mod found!")
 end
@@ -113,7 +146,6 @@ function Papi.GetPlayerRoles(ply)
     else
         return { PLAYER.GetUserGroup(ply) }
     end
-    error("No supported admin mod found!")
 end
 
 function Papi.GetRoles()
@@ -133,10 +165,26 @@ function Papi.GetRoles()
             n = n + 1
         end
         return all
+    elseif ULib then
+        local all = {}
+        local n = 1
+        for role_name in pairs(ULib.ucl.groups) do
+            all[n] = role_name
+            n = n + 1
+        end
+        return all
     elseif is_xadmin("1") or is_xadmin("2") then
         local all = {}
         local n = 1
         for role_name in pairs(xAdmin.Groups) do
+            all[n] = role_name
+            n = n + 1
+        end
+        return all
+    elseif sAdmin then
+        local all = {}
+        local n = 1
+        for role_name in pairs(sAdmin.usergroups) do
             all[n] = role_name
             n = n + 1
         end
