@@ -17,6 +17,8 @@ function Papi.AddPermission(name, min_access, category)
         sam.permissions.add(name, category or "Papi", min_access)
     elseif xAdmin then
         xAdmin.RegisterPermission(name, name, category) -- No point in fallback to Papi, xAdmin will set it to misc anyway
+    elseif sAdmin then
+        sAdmin.registerPermission(name, category or "Papi", false, true)
     else
         error("No supported admin mod found!")
     end
@@ -48,6 +50,14 @@ function Papi.GetPermissions()
             n = n + 1
         end
         return all
+    elseif sAdmin then
+        local all = {}
+        local n = 1
+        for perm in pairs(sAdmin.getPermissionsKeys()) do
+            all[n] = perm
+            n = n + 1
+        end
+        return all
     end
     error("No supported admin mod found!")
 end
@@ -57,6 +67,8 @@ function Papi.PlayerHasPermission(ply, perm_name)
         return PLAYER.HasPermission(ply, perm_name)
     elseif xAdmin then
         return PLAYER.xAdminHasPermission(ply, perm_name)
+    elseif sAdmin then
+        return sAdmin.hasPermission(ply, perm_name)
     end
     return false
 end
@@ -84,6 +96,8 @@ function Papi.GetPlayersWithPermission(perm_name)
             end
         end
         return players
+    elseif sAdmin then
+        return sAdmin.FindByPerm(perm_name)
     end
     error("No supported admin mod found!")
 end
@@ -91,10 +105,9 @@ end
 function Papi.GetPlayerRoles(ply)
     if Lyn then
         return Lyn.Player.Role.GetAll(ply)
-    elseif sam or xAdmin then
+    else
         return { PLAYER.GetUserGroup(ply) }
     end
-    error("No supported admin mod found!")
 end
 
 function Papi.GetRoles()
@@ -118,6 +131,14 @@ function Papi.GetRoles()
         local all = {}
         local n = 1
         for role_name in pairs(xAdmin.Groups) do
+            all[n] = role_name
+            n = n + 1
+        end
+        return all
+    elseif sAdmin then
+        local all = {}
+        local n = 1
+        for role_name in pairs(sAdmin.usergroups) do
             all[n] = role_name
             n = n + 1
         end
