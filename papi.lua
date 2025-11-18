@@ -198,6 +198,10 @@ function Papi.Kick(ply, reason)
         Lyn.Command.Execute("kick", ply, reason)
     elseif sam then
         RunConsoleCommand("sam", "kick", "#" .. ply:EntIndex(), reason)
+    elseif ULib then
+        RunConsoleCommand("ulx", "kick", ply:SteamID64(), reason)
+    elseif is_xadmin("1") or is_xadmin("2") then
+        RunConsoleCommand("xadmin", "kick", ply:SteamID32(), reason)
     elseif sAdmin then
         RunConsoleCommand("sa", "kick", ply:SteamID64(), reason)
     else
