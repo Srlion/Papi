@@ -9,12 +9,12 @@ local pairs = pairs
 -- To avoid cost of Player.__index lookups
 local PLAYER = FindMetaTable("Player")
 
-function is_xadmin(type)
-    if type == "1" then
+local function is_xadmin(t)
+    if t == "1" then
         return xAdmin.Categories ~= nil
-    elseif type == "2" then
+    elseif t == "2" then
         return xAdmin.ARG_PLAYER ~= nil
-    elseif type == "owain" then
+    elseif t:lower() == "owain" then
         return xAdmin.Database ~= nil
     end
 end
