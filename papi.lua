@@ -193,4 +193,16 @@ function Papi.GetRoles()
     error("No supported admin mod found!")
 end
 
+function Papi.Kick(ply, reason)
+    if Lyn then
+        Lyn.Command.Execute("kick", ply, reason)
+    elseif sam then
+        RunConsoleCommand("sam", "kick", "#" .. ply:EntIndex(), reason)
+    elseif sAdmin then
+        RunConsoleCommand("sa", "kick", ply:SteamID64(), reason)
+    else
+        error("No supported admin mod found!")
+    end
+end
+
 return Papi
