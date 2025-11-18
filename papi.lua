@@ -30,6 +30,14 @@ function Papi.GetPermissions()
             copy[i] = sam_perms[i].name
         end
         return copy
+    elseif ULib then
+        local all = {}
+        local n = 1
+        for perm_name, _ in pairs(ULib.ucl.accessStrings) do
+            all[n] = perm_name
+            n = n + 1
+        end
+        return all
     end
     error("No supported admin mod found!")
 end
