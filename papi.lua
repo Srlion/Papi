@@ -1,3 +1,5 @@
+Papi = Papi or {}
+
 function Papi.AddPermission()
 
 end
