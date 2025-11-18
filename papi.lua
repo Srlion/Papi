@@ -199,7 +199,7 @@ function Papi.Kick(ply, reason)
     elseif sam then
         RunConsoleCommand("sam", "kick", "#" .. ply:EntIndex(), reason)
     elseif ULib then
-        RunConsoleCommand("ulx", "kick", ply:SteamID64(), reason)
+        RunConsoleCommand("ulx", "kick", "$" .. ply:UserID(), reason)
     elseif is_xadmin("1") or is_xadmin("2") then
         RunConsoleCommand("xadmin", "kick", ply:SteamID(), reason)
     elseif sAdmin then
@@ -214,6 +214,10 @@ function Papi.BanID64(steamid64, length, reason)
         Lyn.Command.Execute("banid", steamid64, length, reason)
     elseif sam then
         RunConsoleCommand("sam", "banid", steamid64, length / 60, reason) -- sam ban length is in minutes
+    elseif ULib then
+        RunConsoleCommand("ulx", "banid", util.SteamIDFrom64(steamid64), reason)
+    elseif is_xadmin("1") or is_xadmin("2") then
+        RunConsoleCommand("xadmin", "banid", util.SteamIDFrom64(steamid64), reason)
     elseif sAdmin then
         RunConsoleCommand("sa", "banid", steamid64, length, reason)
     else
@@ -230,6 +234,10 @@ function Papi.UnbanID64(steamid64)
         Lyn.Command.Execute("unban", steamid64)
     elseif sam then
         RunConsoleCommand("sam", "unban", steamid64)
+    elseif ULib then
+        RunConsoleCommand("ulx", "unban", util.SteamIDFrom64(steamid64), reason)
+    elseif is_xadmin("1") or is_xadmin("2") then
+        RunConsoleCommand("xadmin", "unban", util.SteamIDFrom64(steamid64), reason)
     elseif sAdmin then
         RunConsoleCommand("sa", "unban", steamid64)
     else
