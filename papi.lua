@@ -209,4 +209,32 @@ function Papi.Kick(ply, reason)
     end
 end
 
+function Papi.BanID64(steamid64, length, reason)
+    if Lyn then
+        Lyn.Command.Execute("banid", steamid64, length, reason)
+    elseif sam then
+        RunConsoleCommand("sam", "banid", steamid64, length / 60, reason) -- sam ban length is in minutes
+    elseif sAdmin then
+        RunConsoleCommand("sa", "banid", steamid64, length, reason)
+    else
+        error("No supported admin mod found!")
+    end
+end
+
+function Papi.Ban(ply, length, reason)
+    return Papi.BanID64(ply:SteamID64(), length, reason)
+end
+
+function Papi.UnbanID64(steamid64)
+    if Lyn then
+        Lyn.Command.Execute("unban", steamid64)
+    elseif sam then
+        RunConsoleCommand("sam", "unban", steamid64)
+    elseif sAdmin then
+        RunConsoleCommand("sa", "unban", steamid64)
+    else
+        error("No supported admin mod found!")
+    end
+end
+
 return Papi
