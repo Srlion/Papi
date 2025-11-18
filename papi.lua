@@ -1,6 +1,6 @@
-Papi = Papi or {}
+local Papi = {}
 
-function Papi.AddPermission()
+function Papi.AddPermission(name, min_access, category)
 
 end
 
@@ -8,26 +8,28 @@ function Papi.GetPermissions()
 
 end
 
-function Papi.PlayerHasPermission()
+function Papi.PlayerHasPermission(ply, perm_name)
 
 end
 
-function Papi.GetPlayersWithPermission()
+function Papi.GetPlayersWithPermission(perm_name)
 
 end
 
-function Papi.GetPlayerRoles()
+function Papi.GetPlayerRoles(ply)
 
 end
 
-function Papi.PlayerHasRole()
+function Papi.PlayerHasRole(ply, role_name)
 
 end
 
-function Papi.SteamIDHasPermission()
+function Papi.SteamIDHasPermission(steam_id, perm_name, callback)
 
 end
 
 function Papi.GetRoles()
 
 end
+
+return Papi
