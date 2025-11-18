@@ -7,6 +7,16 @@ local pairs = pairs
 -- To avoid cost of Player.__index lookups
 local PLAYER = FindMetaTable("Player")
 
+function is_xadmin(type)
+    if type == "1" then
+        return xAdmin.Categories ~= nil
+    elseif type == "2" then
+        return xAdmin.ARG_PLAYER ~= nil
+    elseif type == "owain" then
+        return xAdmin.Database ~= nil
+    end
+end
+
 function Papi.AddPermission(name, min_access, category)
     assert(type(name) == "string", "Permission name must be a string")
     assert(type(min_access) == "string", "Minimum access level must be a string")
@@ -40,7 +50,7 @@ function Papi.GetPermissions()
             n = n + 1
         end
         return all
-    elseif xAdmin then
+    elseif is_xadmin("1") or is_xadmin("2") then
         local all = {}
         local n = 1
         for perm_name, _ in pairs(xAdmin.Permissions) do
@@ -55,7 +65,7 @@ end
 function Papi.PlayerHasPermission(ply, perm_name)
     if Lyn or sam then
         return PLAYER.HasPermission(ply, perm_name)
-    elseif xAdmin then
+    elseif is_xadmin("1") or is_xadmin("2") then
         return PLAYER.xAdminHasPermission(ply, perm_name)
     end
     return false
@@ -74,7 +84,7 @@ function Papi.GetPlayersWithPermission(perm_name)
             end
         end
         return players
-    elseif xAdmin then
+    elseif is_xadmin("1") or is_xadmin("2") then
         local players = {}
         local n = 1
         for _, ply in player.Iterator() do
@@ -91,7 +101,16 @@ end
 function Papi.GetPlayerRoles(ply)
     if Lyn then
         return Lyn.Player.Role.GetAll(ply)
-    elseif sam or xAdmin then
+    elseif is_xadmin("1") or is_xadmin("2") then
+        local all = {}
+        all[1] = PLAYER.GetUserGroup(ply)
+        local n = 2
+        for role_name in pairs(PLAYER.GetExtraUserGroups(ply)) do
+            all[n] = role_name
+            n = n + 1
+        end
+        return all
+    else
         return { PLAYER.GetUserGroup(ply) }
     end
     error("No supported admin mod found!")
@@ -114,7 +133,7 @@ function Papi.GetRoles()
             n = n + 1
         end
         return all
-    elseif xAdmin then
+    elseif is_xadmin("1") or is_xadmin("2") then
         local all = {}
         local n = 1
         for role_name in pairs(xAdmin.Groups) do
