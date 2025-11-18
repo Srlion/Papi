@@ -15,6 +15,8 @@ function Papi.AddPermission(name, min_access, category)
         Lyn.Permission.Add(name, category or "Papi", min_access)
     elseif sam then
         sam.permissions.add(name, category or "Papi", min_access)
+    elseif xAdmin then
+        xAdmin.RegisterPermission(name, name, category) -- No point in fallback to Papi, xAdmin will set it to misc anyway
     else
         error("No supported admin mod found!")
     end
@@ -38,6 +40,14 @@ function Papi.GetPermissions()
             n = n + 1
         end
         return all
+    elseif xAdmin then
+        local all = {}
+        local n = 1
+        for perm_name, _ in pairs(xAdmin.Permissions) do
+            all[n] = perm_name
+            n = n + 1
+        end
+        return all
     end
     error("No supported admin mod found!")
 end
@@ -45,6 +55,8 @@ end
 function Papi.PlayerHasPermission(ply, perm_name)
     if Lyn or sam then
         return PLAYER.HasPermission(ply, perm_name)
+    elseif xAdmin then
+        return PLAYER.xAdminHasPermission(ply, perm_name)
     end
     return false
 end
@@ -62,6 +74,16 @@ function Papi.GetPlayersWithPermission(perm_name)
             end
         end
         return players
+    elseif xAdmin then
+        local players = {}
+        local n = 1
+        for _, ply in player.Iterator() do
+            if PLAYER.xAdminHasPermission(ply, perm_name) then
+                players[n] = ply
+                n = n + 1
+            end
+        end
+        return players
     end
     error("No supported admin mod found!")
 end
@@ -69,7 +91,7 @@ end
 function Papi.GetPlayerRoles(ply)
     if Lyn then
         return Lyn.Player.Role.GetAll(ply)
-    elseif sam then
+    elseif sam or xAdmin then
         return { PLAYER.GetUserGroup(ply) }
     end
     error("No supported admin mod found!")
@@ -88,6 +110,14 @@ function Papi.GetRoles()
         local all = {}
         local n = 1
         for role_name in pairs(sam.ranks.get_ranks()) do
+            all[n] = role_name
+            n = n + 1
+        end
+        return all
+    elseif xAdmin then
+        local all = {}
+        local n = 1
+        for role_name in pairs(xAdmin.Groups) do
             all[n] = role_name
             n = n + 1
         end
