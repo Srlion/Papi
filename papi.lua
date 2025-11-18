@@ -14,8 +14,6 @@ local function is_xadmin(t)
         return xAdmin.Categories ~= nil
     elseif t == "2" then
         return xAdmin.ARG_PLAYER ~= nil
-    elseif t:lower() == "owain" then
-        return xAdmin.Database ~= nil
     end
 end
 
@@ -29,8 +27,10 @@ function Papi.AddPermission(name, min_access, category)
         sam.permissions.add(name, category or "Papi", min_access)
     elseif ULib then
         ULib.ucl.registerAccess(name, min_access, "A privilege from Papi", category or "Papi")
-    elseif xAdmin then
+    elseif is_xadmin("1") then
         xAdmin.RegisterPermission(name, name, category) -- No point in fallback to Papi, xAdmin will set it to misc anyway
+    elseif is_xadmin("2") then
+        xAdmin.RegisterPermission(name, name, category or "Papi")
     elseif sAdmin then
         sAdmin.registerPermission(name, category or "Papi", false, true)
     else
