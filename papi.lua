@@ -243,4 +243,36 @@ function Papi.UnbanID64(steamid64)
     end
 end
 
+function Papi.Freeze(ply)
+    if Lyn then
+        Lyn.Command.Execute("freeze", ply)
+    elseif sam then
+        RunConsoleCommand("sam", "freeze", "#" .. ply:EntIndex())
+    elseif ULib then
+        RunConsoleCommand("ulx", "freeze", "$" .. ply:UserID())
+    elseif is_xadmin("1") or is_xadmin("2") then
+        RunConsoleCommand("xadmin", "freeze", ply:SteamID())
+    elseif sAdmin then
+        RunConsoleCommand("sa", "freeze", ply:SteamID64())
+    else
+        error("No supported admin mod found!")
+    end
+end
+
+function Papi.Unfreeze(ply)
+    if Lyn then
+        Lyn.Command.Execute("unfreeze", ply)
+    elseif sam then
+        RunConsoleCommand("sam", "unfreeze", "#" .. ply:EntIndex())
+    elseif ULib then
+        RunConsoleCommand("ulx", "unfreeze", "$" .. ply:UserID())
+    elseif is_xadmin("1") or is_xadmin("2") then
+        RunConsoleCommand("xadmin", "unfreeze", ply:SteamID())
+    elseif sAdmin then
+        RunConsoleCommand("sa", "unfreeze", ply:SteamID64())
+    else
+        error("No supported admin mod found!")
+    end
+end
+
 return Papi
