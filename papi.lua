@@ -276,4 +276,54 @@ function Papi.Commands.Unfreeze(ply)
     end
 end
 
+if CLIENT then
+    function Papi.Commands.Goto(ply)
+        if Lyn then
+            Lyn.Command.Execute("goto", ply)
+        elseif sam then
+            RunConsoleCommand("sam", "goto", "#" .. ply:EntIndex())
+        elseif ULib then
+            RunConsoleCommand("ulx", "goto", "$" .. ply:UserID())
+        elseif is_xadmin("1") or is_xadmin("2") then
+            RunConsoleCommand("xadmin", "goto", ply:SteamID())
+        elseif sAdmin then
+            RunConsoleCommand("sa", "goto", ply:SteamID64())
+        else
+            error("No supported admin mod found!")
+        end
+    end
+
+    function Papi.Commands.Bring(ply)
+        if Lyn then
+            Lyn.Command.Execute("bring", ply)
+        elseif sam then
+            RunConsoleCommand("sam", "bring", "#" .. ply:EntIndex())
+        elseif ULib then
+            RunConsoleCommand("ulx", "bring", "$" .. ply:UserID())
+        elseif is_xadmin("1") or is_xadmin("2") then
+            RunConsoleCommand("xadmin", "bring", ply:SteamID())
+        elseif sAdmin then
+            RunConsoleCommand("sa", "bring", ply:SteamID64())
+        else
+            error("No supported admin mod found!")
+        end
+    end
+
+    function Papi.Commands.Return(ply)
+        if Lyn then
+            Lyn.Command.Execute("return", ply)
+        elseif sam then
+            RunConsoleCommand("sam", "return", "#" .. ply:EntIndex())
+        elseif ULib then
+            RunConsoleCommand("ulx", "return", "$" .. ply:UserID())
+        elseif is_xadmin("1") or is_xadmin("2") then
+            RunConsoleCommand("xadmin", "return", ply:SteamID())
+        elseif sAdmin then
+            RunConsoleCommand("sa", "return", ply:SteamID64())
+        else
+            error("No supported admin mod found!")
+        end
+    end
+end
+
 return Papi
