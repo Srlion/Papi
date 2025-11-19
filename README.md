@@ -95,6 +95,12 @@ local Papi = include("path/to/papi.lua")
 - Errors if no supported admin mod is found
 - Teleport commands (Goto, Bring, Return) are client-side only
 
+## TODO
+
+- More common commands
+- FAdmin support maybe?
+- Allow registering custom commands? (Will be simple wrapper functions)
+
 ## Credits
 
 [MathsCalculator](https://github.com/MathsCalculator) - Helped implementing half of the admin mods and testing.
