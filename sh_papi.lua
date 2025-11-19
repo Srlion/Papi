@@ -32,6 +32,11 @@ local function queue(func, ...)
     func(...)
 end
 
+function Papi.GetActiveAdminMod()
+    if not Papi.Loaded then check_load() end
+    return Papi.ActiveAdminMod
+end
+
 function Papi.AddPermission(name, min_access, category)
     assert(type(name) == "string", "Permission name must be a string")
     assert(type(min_access) == "string", "Minimum access level must be a string")
@@ -134,7 +139,7 @@ local function Add(name, loader)
 end
 
 Add("Lyn", function()
-    local Lyn = Lyn     -- avoid global lookups
+    local Lyn = Lyn -- avoid global lookups
     if not Lyn then return end
 
     local api = {
