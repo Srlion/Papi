@@ -50,6 +50,28 @@ local roles = Papi.GetPlayerRoles(ply)
 
 -- Get all available roles, returns an array of role names, eg. {"admin", "moderator", ...}
 local allRoles = Papi.GetRoles()
+
+-- Listen for role changes, make sure identifier is unique as it's just a wrapper on top of hook.Add
+Papi.OnRoleChanges("my_listener", function(ply, steamid64)
+    -- Called when a player's role changes
+    -- ply can be nil if player is not connected
+end)
+
+-- Remove listener
+Papi.OnRoleChanges("my_listener", nil)
+```
+
+### Ban Checking
+
+```lua
+-- Check if SteamID64 is banned (SERVER only)
+Papi.IsSteamid64Banned("76561198000000000", function(is_banned)
+    if is_banned then
+        print("Player is banned")
+    else
+        print("Player is not banned")
+    end
+end)
 ```
 
 ### Commands
