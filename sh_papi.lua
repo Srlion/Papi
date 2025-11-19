@@ -106,6 +106,8 @@ function Papi.PlayerHasPermission(ply, perm_name)
         return PLAYER.xAdminHasPermission(ply, perm_name)
     elseif sAdmin then
         return sAdmin.hasPermission(ply, perm_name)
+    elseif CAMI then -- fallback to CAMI
+        return CAMI.PlayerHasAccess(ply, perm_name)
     end
     return false
 end
