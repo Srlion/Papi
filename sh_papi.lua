@@ -393,6 +393,8 @@ Add("ULX", function()
     end
 
     function api.OnRoleChanges(identifier, func)
+        -- TODO: ULX does not signal role changes for clientside, we need to send a net message from server to client
+
         if not func then
             hook.Remove(ULib.HOOK_USER_GROUP_CHANGE, identifier)
             return
