@@ -70,6 +70,10 @@ function Papi.GetRoles()
     return Papi.API.GetRoles()
 end
 
+function Papi.OnRoleChanges(identifier, func)
+    queue(Papi.API.OnRoleChanges, identifier, func)
+end
+
 function Papi.Commands.Kick(ply, reason)
     queue(Papi.API.Commands.Kick, ply, reason)
 end
@@ -170,6 +174,22 @@ Add("Lyn", function()
         return all
     end
 
+    function api.OnRoleChanges(identifier, func)
+        if not func then
+            hook.Remove("Lyn.Player.Role.Add", identifier)
+            hook.Remove("Lyn.Player.Role.Remove", identifier)
+            return
+        end
+
+        hook.Add("Lyn.Player.Role.Add", identifier, function(ply, steamid64)
+            func(ply, steamid64)
+        end)
+
+        hook.Add("Lyn.Player.Role.Remove", identifier, function(ply, steamid64)
+            func(ply, steamid64)
+        end)
+    end
+
     function api.Commands.Kick(ply, reason)
         Lyn.Command.Execute("kick", ply, reason)
     end
@@ -256,6 +276,31 @@ Add("SAM", function()
             all[n] = role_name; n = n + 1
         end
         return all
+    end
+
+    function api.OnRoleChanges(identifier, func)
+        if not func then
+            hook.Remove("SAM.ChangedPlayerRank", identifier)
+            hook.Remove("SAM.ChangedSteamIDRank", identifier)
+            return
+        end
+
+        hook.Add("SAM.ChangedPlayerRank", identifier, function(ply)
+            func(ply, ply:SteamID64())
+        end)
+
+        hook.Add("SAM.ChangedSteamIDRank", identifier, function(steamid)
+            local ply = player.GetBySteamID(steamid)
+            if ply and ply:IsValid() then
+                func(ply, ply:SteamID64())
+                return
+            end
+
+            local steamid64 = util.SteamIDTo64(steamid)
+            if steamid64 == "0" then return end -- BOT or invalid
+
+            func(nil, steamid64)
+        end)
     end
 
     function api.Commands.Kick(ply, reason)
@@ -345,6 +390,32 @@ Add("ULX", function()
             all[n] = role_name; n = n + 1
         end
         return all
+    end
+
+    function api.OnRoleChanges(identifier, func)
+        if not func then
+            hook.Remove(ULib.HOOK_USER_GROUP_CHANGE, identifier)
+            return
+        end
+
+        hook.Add(ULib.HOOK_USER_GROUP_CHANGE, identifier, function(steamid)
+            ---@cast steamid string
+
+            local ply = player.GetBySteamID(steamid)
+            if ply and ply:IsValid() then
+                func(ply, ply:SteamID64())
+                return
+            end
+
+            -- ULX can pass SteamID64 or SteamID32, who the heck knows
+            if steamid:StartsWith("7") then -- Already SteamID64
+                func(ply, steamid)
+                return
+            end
+
+            local steamid64 = util.SteamIDTo64(steamid)
+            func(ply, steamid64)
+        end)
     end
 
     function api.Commands.Kick(ply, reason)
