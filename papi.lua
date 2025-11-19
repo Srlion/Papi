@@ -234,9 +234,9 @@ function Papi.Commands.UnbanID64(steamid64)
     elseif sam then
         RunConsoleCommand("sam", "unban", steamid64)
     elseif ULib then
-        RunConsoleCommand("ulx", "unban", util.SteamIDFrom64(steamid64), reason)
+        RunConsoleCommand("ulx", "unban", util.SteamIDFrom64(steamid64))
     elseif is_xadmin("1") or is_xadmin("2") then
-        RunConsoleCommand("xadmin", "unban", util.SteamIDFrom64(steamid64), reason)
+        RunConsoleCommand("xadmin", "unban", util.SteamIDFrom64(steamid64))
     elseif sAdmin then
         RunConsoleCommand("sa", "unban", steamid64)
     else
