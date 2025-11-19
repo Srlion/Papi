@@ -7,7 +7,6 @@ A unified API for Garry's Mod admin mods. Write once, work with any supported ad
 - [**Lyn**](https://www.gmodstore.com/market/view/lyn)
 - [**SAM**](https://www.gmodstore.com/market/view/sam)
 - [**ULX**](https://github.com/TeamUlysses/ulx)
-- **xAdmin** ([v1](https://www.gmodstore.com/market/view/xadmin) & [v2](https://www.gmodstore.com/market/view/xadmin-2-admin-mod))
 - [**sAdmin**](https://www.gmodstore.com/market/view/sadmin-the-best-admin-mod)
 
 ## Quick Usage
@@ -29,10 +28,7 @@ end
 local Papi = include("papi.lua")
 
 -- Add a permission
--- It's inside a timer because loading order may vary between admin mods
-timer.Simple(0, function()
-    Papi.AddPermission("my_permission", "admin", "MyCategory")
-end)
+Papi.AddPermission("my_permission", "admin", "MyCategory")
 
 -- Check if player has permission
 if Papi.PlayerHasPermission(ply, "my_permission") then

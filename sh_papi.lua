@@ -1,5 +1,9 @@
-local Papi = {}
-Papi.Commands = {}
+local Papi = {
+    Loaded = false,
+    Commands = {},
+    API = nil,
+    ActiveAdminMod = nil,
+}
 
 local player = player
 local type = type
@@ -8,116 +12,226 @@ local pairs = pairs
 -- To avoid cost of Player.__index lookups
 local PLAYER = FindMetaTable("Player")
 
-local function is_xadmin(t)
-    if not xAdmin then return false end
-    if t == "1" then
-        return xAdmin.Categories ~= nil
-    elseif t == "2" then
-        return xAdmin.ARG_PLAYER ~= nil
+local function check_load()
+    -- Try loading, in case this is called right after all addons load and before next tick
+    Papi.Load()
+    if not Papi.Loaded then
+        return error("Papi is not loaded yet!")
     end
 end
 
-function Papi.GetActiveAdminMod()
-    if Lyn then
-        return "Lyn"
-    elseif sam then
-        return "SAM"
-    elseif ULib then
-        return "ULX"
-    elseif is_xadmin("1") then
-        return "xAdmin1"
-    elseif is_xadmin("2") then
-        return "xAdmin2"
-    elseif sAdmin then
-        return "sAdmin"
-    else
-        return nil
+local function queue(func, ...)
+    Papi.Load()
+    if not Papi.Loaded then
+        local args, n = { ... }, select("#", ...)
+        timer.Simple(0, function()
+            func(unpack(args, 1, n))
+        end)
+        return
     end
+    func(...)
 end
 
 function Papi.AddPermission(name, min_access, category)
     assert(type(name) == "string", "Permission name must be a string")
     assert(type(min_access) == "string", "Minimum access level must be a string")
     assert(category == nil or type(category) == "string", "Category must be a string or nil")
-    if Lyn then
-        Lyn.Permission.Add(name, category or "Papi", min_access)
-    elseif sam then
-        sam.permissions.add(name, category or "Papi", min_access)
-    elseif ULib then
-        ULib.ucl.registerAccess(name, min_access, "A privilege from Papi", category or "Papi")
-    elseif is_xadmin("1") then
-        xAdmin.RegisterPermission(name, name, category) -- No point in fallback to Papi, xAdmin will set it to misc anyway
-    elseif is_xadmin("2") then
-        xAdmin.RegisterPermission(name, name, category or "Papi")
-    elseif sAdmin then
-        sAdmin.registerPermission(name, category or "Papi", false, true)
-    else
-        error("No supported admin mod found!")
-    end
+
+    queue(Papi.API.AddPermission, name, min_access, category or "Papi")
 end
 
 function Papi.GetPermissions()
-    if Lyn then
-        return Lyn.Permission.GetAll()
-    elseif sam then
+    if not Papi.Loaded then check_load() end
+    return Papi.API.GetPermissions()
+end
+
+function Papi.PlayerHasPermission(ply, perm_name)
+    if not Papi.Loaded then check_load() end
+    return Papi.API.PlayerHasPermission(ply, perm_name)
+end
+
+function Papi.GetPlayersWithPermission(perm_name)
+    if not Papi.Loaded then check_load() end
+    return Papi.API.GetPlayersWithPermission(perm_name)
+end
+
+function Papi.GetPlayerRoles(ply)
+    if not Papi.Loaded then check_load() end
+    return Papi.API.GetPlayerRoles(ply)
+end
+
+function Papi.GetRoles()
+    if not Papi.Loaded then check_load() end
+    return Papi.API.GetRoles()
+end
+
+function Papi.Commands.Kick(ply, reason)
+    queue(Papi.API.Commands.Kick, ply, reason)
+end
+
+function Papi.Commands.BanID64(steamid64, length, reason)
+    queue(Papi.API.Commands.BanID64, steamid64, length, reason)
+end
+
+function Papi.Commands.Ban(ply, length, reason)
+    queue(Papi.API.Commands.Ban, ply, length, reason)
+end
+
+function Papi.Commands.UnbanID64(steamid64)
+    queue(Papi.API.Commands.UnbanID64, steamid64)
+end
+
+function Papi.Commands.Freeze(ply)
+    queue(Papi.API.Commands.Freeze, ply)
+end
+
+function Papi.Commands.Unfreeze(ply)
+    queue(Papi.API.Commands.Unfreeze, ply)
+end
+
+if CLIENT then
+    function Papi.Commands.Goto(ply)
+        queue(Papi.API.Commands.Goto, ply)
+    end
+
+    function Papi.Commands.Bring(ply)
+        queue(Papi.API.Commands.Bring, ply)
+    end
+
+    function Papi.Commands.Return(ply)
+        queue(Papi.API.Commands.Return, ply)
+    end
+end
+
+local ADMIN_MODS = {}
+
+function Papi.Load()
+    if Papi.Loaded then return end
+
+    if not gmod.GetGamemode() then
+        timer.Simple(0, Papi.Load)
+        return
+    end
+
+    for _, mod in ipairs(ADMIN_MODS) do
+        local api = mod.loader()
+        if api then
+            Papi.ActiveAdminMod = mod.name
+            Papi.API = api
+            Papi.Loaded = true
+            return
+        end
+    end
+
+    MsgC(Color(168, 95, 183), "[Papi]", Color(255, 255, 255), " No supported admin mod found! Papi will not function!\n")
+end
+
+local function Add(name, loader)
+    table.insert(ADMIN_MODS, {
+        name = name,
+        loader = loader,
+    })
+end
+
+Add("Lyn", function()
+    local Lyn = Lyn     -- avoid global lookups
+    if not Lyn then return end
+
+    local api = {
+        Commands = {}
+    }
+
+    function api.AddPermission(name, min_access, category)
+        Lyn.Permission.Add(name, category, min_access)
+    end
+
+    api.GetPermissions = Lyn.Permission.GetAll
+
+    function api.PlayerHasPermission(ply, perm_name)
+        return PLAYER.HasPermission(ply, perm_name)
+    end
+
+    function api.GetPlayersWithPermission(perm_name)
+        return Lyn.Player.GetAllWithPermission(perm_name)
+    end
+
+    api.GetPlayerRoles = Lyn.Player.Role.GetAll
+
+    function api.GetRoles()
+        local all, n = {}, 1
+        for role_name in pairs(Lyn.Role.GetAll()) do
+            all[n] = role_name; n = n + 1
+        end
+        return all
+    end
+
+    function api.Commands.Kick(ply, reason)
+        Lyn.Command.Execute("kick", ply, reason)
+    end
+
+    function api.Commands.BanID64(steamid64, length, reason)
+        Lyn.Command.Execute("banid", steamid64, length, reason)
+    end
+
+    function api.Commands.Ban(ply, length, reason)
+        return api.Commands.BanID64(ply:SteamID64(), length, reason)
+    end
+
+    function api.Commands.UnbanID64(steamid64)
+        Lyn.Command.Execute("unban", steamid64)
+    end
+
+    function api.Commands.Freeze(ply)
+        Lyn.Command.Execute("freeze", ply)
+    end
+
+    function api.Commands.Unfreeze(ply)
+        Lyn.Command.Execute("unfreeze", ply)
+    end
+
+    if CLIENT then
+        function api.Commands.Goto(ply)
+            Lyn.Command.Execute("goto", ply)
+        end
+
+        function api.Commands.Bring(ply)
+            Lyn.Command.Execute("bring", ply)
+        end
+
+        function api.Commands.Return(ply)
+            Lyn.Command.Execute("return", ply)
+        end
+    end
+
+    return api
+end
+)
+
+Add("SAM", function()
+    local sam = sam
+    if not sam then return end
+
+    local api = { Commands = {} }
+
+    function api.AddPermission(name, min_access, category)
+        sam.permissions.add(name, category, min_access)
+    end
+
+    function api.GetPermissions()
         local sam_perms = sam.permissions.get()
         local copy = {}
         for i = 1, #sam_perms do
             copy[i] = sam_perms[i].name
         end
         return copy
-    elseif ULib then
-        local all = {}
-        local n = 1
-        for perm_name, _ in pairs(ULib.ucl.accessStrings) do
-            all[n] = perm_name
-            n = n + 1
-        end
-        return all
-    elseif is_xadmin("1") or is_xadmin("2") then
-        local all = {}
-        local n = 1
-        for perm_name, _ in pairs(xAdmin.Permissions) do
-            all[n] = perm_name
-            n = n + 1
-        end
-        return all
-    elseif sAdmin then
-        local all = {}
-        local n = 1
-        for perm in pairs(sAdmin.getPermissionsKeys()) do
-            all[n] = perm
-            n = n + 1
-        end
-        return all
     end
-    error("No supported admin mod found!")
-end
 
-function Papi.PlayerHasPermission(ply, perm_name)
-    if Lyn or sam then
+    function api.PlayerHasPermission(ply, perm_name)
         return PLAYER.HasPermission(ply, perm_name)
-    elseif ULib then
-        -- https://github.com/TeamUlysses/ulib/blob/147657e31a15bdcc5b5fec89dd9f5650aebeb54a/lua/ulib/shared/cami_ulib.lua#L16
-        local priv = perm_name:lower()
-        local result = ULib.ucl.query(ply, priv, true)
-        return not not result
-    elseif is_xadmin("1") or is_xadmin("2") then
-        return PLAYER.xAdminHasPermission(ply, perm_name)
-    elseif sAdmin then
-        return sAdmin.hasPermission(ply, perm_name)
-    elseif CAMI then -- fallback to CAMI
-        return CAMI.PlayerHasAccess(ply, perm_name)
     end
-    return false
-end
 
-function Papi.GetPlayersWithPermission(perm_name)
-    if Lyn then
-        return Lyn.Player.GetAllWithPermission(perm_name)
-    elseif sam then
-        local players = {}
-        local n = 1
+    function api.GetPlayersWithPermission(perm_name)
+        local players, n = {}, 1
         for _, ply in player.Iterator() do
             if PLAYER.HasPermission(ply, perm_name) then
                 players[n] = ply
@@ -125,226 +239,227 @@ function Papi.GetPlayersWithPermission(perm_name)
             end
         end
         return players
-    elseif ULib then
-        local players = {}
-        local n = 1
-        for _, ply in player.Iterator() do
-            if Papi.PlayerHasPermission(ply, perm_name) then
-                players[n] = ply
-                n = n + 1
-            end
-        end
-        return players
-    elseif is_xadmin("1") or is_xadmin("2") then
-        local players = {}
-        local n = 1
-        for _, ply in player.Iterator() do
-            if PLAYER.xAdminHasPermission(ply, perm_name) then
-                players[n] = ply
-                n = n + 1
-            end
-        end
-        return players
-    elseif sAdmin then
-        return sAdmin.FindByPerm(perm_name)
     end
-    error("No supported admin mod found!")
-end
 
-function Papi.GetPlayerRoles(ply)
-    if Lyn then
-        return Lyn.Player.Role.GetAll(ply)
-    elseif is_xadmin("1") or is_xadmin("2") then
-        local all = {}
-        all[1] = PLAYER.GetUserGroup(ply)
-        local n = 2
-        for role_name in pairs(PLAYER.GetExtraUserGroups(ply)) do
-            all[n] = role_name
-            n = n + 1
-        end
-        return all
-    else
+    function api.GetPlayerRoles(ply)
         return { PLAYER.GetUserGroup(ply) }
     end
-end
 
-function Papi.GetRoles()
-    if Lyn then
-        local all = {}
-        local n = 1
-        for role_name in pairs(Lyn.Role.GetAll()) do
-            all[n] = role_name
-            n = n + 1
-        end
-        return all
-    elseif sam then
-        local all = {}
-        local n = 1
+    function api.GetRoles()
+        local all, n = {}, 1
         for role_name in pairs(sam.ranks.get_ranks()) do
-            all[n] = role_name
-            n = n + 1
-        end
-        return all
-    elseif ULib then
-        local all = {}
-        local n = 1
-        for role_name in pairs(ULib.ucl.groups) do
-            all[n] = role_name
-            n = n + 1
-        end
-        return all
-    elseif is_xadmin("1") or is_xadmin("2") then
-        local all = {}
-        local n = 1
-        for role_name in pairs(xAdmin.Groups) do
-            all[n] = role_name
-            n = n + 1
-        end
-        return all
-    elseif sAdmin then
-        local all = {}
-        local n = 1
-        for role_name in pairs(sAdmin.usergroups) do
-            all[n] = role_name
-            n = n + 1
+            all[n] = role_name; n = n + 1
         end
         return all
     end
-    error("No supported admin mod found!")
-end
 
-function Papi.Commands.Kick(ply, reason)
-    if Lyn then
-        Lyn.Command.Execute("kick", ply, reason)
-    elseif sam then
+    function api.Commands.Kick(ply, reason)
         RunConsoleCommand("sam", "kick", "#" .. ply:EntIndex(), reason)
-    elseif ULib then
-        RunConsoleCommand("ulx", "kick", "$" .. ply:UserID(), reason)
-    elseif is_xadmin("1") or is_xadmin("2") then
-        RunConsoleCommand("xadmin", "kick", ply:SteamID(), reason)
-    elseif sAdmin then
-        RunConsoleCommand("sa", "kick", ply:SteamID64(), reason)
-    else
-        error("No supported admin mod found!")
     end
-end
 
-function Papi.Commands.BanID64(steamid64, length, reason)
-    if Lyn then
-        Lyn.Command.Execute("banid", steamid64, length, reason)
-    elseif sam then
-        RunConsoleCommand("sam", "banid", steamid64, length / 60, reason) -- sam ban length is in minutes
-    elseif ULib then
-        RunConsoleCommand("ulx", "banid", util.SteamIDFrom64(steamid64), reason)
-    elseif is_xadmin("1") or is_xadmin("2") then
-        RunConsoleCommand("xadmin", "banid", util.SteamIDFrom64(steamid64), reason)
-    elseif sAdmin then
-        RunConsoleCommand("sa", "banid", steamid64, length, reason)
-    else
-        error("No supported admin mod found!")
+    function api.Commands.BanID64(steamid64, length, reason)
+        RunConsoleCommand("sam", "banid", steamid64, length / 60, reason) -- sam ban length is in minutes, dumb
     end
-end
 
-function Papi.Commands.Ban(ply, length, reason)
-    return Papi.Commands.BanID64(ply:SteamID64(), length, reason)
-end
+    function api.Commands.Ban(ply, length, reason)
+        return api.Commands.BanID64(ply:SteamID64(), length, reason)
+    end
 
-function Papi.Commands.UnbanID64(steamid64)
-    if Lyn then
-        Lyn.Command.Execute("unban", steamid64)
-    elseif sam then
+    function api.Commands.UnbanID64(steamid64)
         RunConsoleCommand("sam", "unban", steamid64)
-    elseif ULib then
-        RunConsoleCommand("ulx", "unban", util.SteamIDFrom64(steamid64))
-    elseif is_xadmin("1") or is_xadmin("2") then
-        RunConsoleCommand("xadmin", "unban", util.SteamIDFrom64(steamid64))
-    elseif sAdmin then
-        RunConsoleCommand("sa", "unban", steamid64)
-    else
-        error("No supported admin mod found!")
     end
-end
 
-function Papi.Commands.Freeze(ply)
-    if Lyn then
-        Lyn.Command.Execute("freeze", ply)
-    elseif sam then
+    function api.Commands.Freeze(ply)
         RunConsoleCommand("sam", "freeze", "#" .. ply:EntIndex())
-    elseif ULib then
-        RunConsoleCommand("ulx", "freeze", "$" .. ply:UserID())
-    elseif is_xadmin("1") or is_xadmin("2") then
-        RunConsoleCommand("xadmin", "freeze", ply:SteamID())
-    elseif sAdmin then
-        RunConsoleCommand("sa", "freeze", ply:SteamID64())
-    else
-        error("No supported admin mod found!")
     end
-end
 
-function Papi.Commands.Unfreeze(ply)
-    if Lyn then
-        Lyn.Command.Execute("unfreeze", ply)
-    elseif sam then
+    function api.Commands.Unfreeze(ply)
         RunConsoleCommand("sam", "unfreeze", "#" .. ply:EntIndex())
-    elseif ULib then
-        RunConsoleCommand("ulx", "unfreeze", "$" .. ply:UserID())
-    elseif is_xadmin("1") or is_xadmin("2") then
-        RunConsoleCommand("xadmin", "unfreeze", ply:SteamID())
-    elseif sAdmin then
-        RunConsoleCommand("sa", "unfreeze", ply:SteamID64())
-    else
-        error("No supported admin mod found!")
     end
-end
 
-if CLIENT then
-    function Papi.Commands.Goto(ply)
-        if Lyn then
-            Lyn.Command.Execute("goto", ply)
-        elseif sam then
+    if CLIENT then
+        function api.Commands.Goto(ply)
             RunConsoleCommand("sam", "goto", "#" .. ply:EntIndex())
-        elseif ULib then
-            RunConsoleCommand("ulx", "goto", "$" .. ply:UserID())
-        elseif is_xadmin("1") or is_xadmin("2") then
-            RunConsoleCommand("xadmin", "goto", ply:SteamID())
-        elseif sAdmin then
-            RunConsoleCommand("sa", "goto", ply:SteamID64())
-        else
-            error("No supported admin mod found!")
         end
-    end
 
-    function Papi.Commands.Bring(ply)
-        if Lyn then
-            Lyn.Command.Execute("bring", ply)
-        elseif sam then
+        function api.Commands.Bring(ply)
             RunConsoleCommand("sam", "bring", "#" .. ply:EntIndex())
-        elseif ULib then
-            RunConsoleCommand("ulx", "bring", "$" .. ply:UserID())
-        elseif is_xadmin("1") or is_xadmin("2") then
-            RunConsoleCommand("xadmin", "bring", ply:SteamID())
-        elseif sAdmin then
-            RunConsoleCommand("sa", "bring", ply:SteamID64())
-        else
-            error("No supported admin mod found!")
+        end
+
+        function api.Commands.Return(ply)
+            RunConsoleCommand("sam", "return", "#" .. ply:EntIndex())
         end
     end
 
-    function Papi.Commands.Return(ply)
-        if Lyn then
-            Lyn.Command.Execute("return", ply)
-        elseif sam then
-            RunConsoleCommand("sam", "return", "#" .. ply:EntIndex())
-        elseif ULib then
+    return api
+end
+)
+
+Add("ULX", function()
+    local ULib = ULib
+    if not ULib then return end
+
+    local api = { Commands = {} }
+
+    function api.AddPermission(name, min_access, category)
+        ULib.ucl.registerAccess(name, min_access, "A privilege from Papi", category)
+    end
+
+    function api.GetPermissions()
+        local all, n = {}, 1
+        for perm_name in pairs(ULib.ucl.accessStrings) do
+            all[n] = perm_name; n = n + 1
+        end
+        return all
+    end
+
+    -- https://github.com/TeamUlysses/ulib/blob/147657e31a15bdcc5b5fec89dd9f5650aebeb54a/lua/ulib/shared/cami_ulib.lua#L16
+    function api.PlayerHasPermission(ply, perm_name)
+        local priv = perm_name:lower()
+        local result = ULib.ucl.query(ply, priv, true)
+        return not not result
+    end
+
+    function api.GetPlayersWithPermission(perm_name)
+        local players, n = {}, 1
+        for _, ply in player.Iterator() do
+            if api.PlayerHasPermission(ply, perm_name) then
+                players[n] = ply; n = n + 1
+            end
+        end
+        return players
+    end
+
+    function api.GetPlayerRoles(ply)
+        return { PLAYER.GetUserGroup(ply) }
+    end
+
+    function api.GetRoles()
+        local all, n = {}, 1
+        for role_name in pairs(ULib.ucl.groups) do
+            all[n] = role_name; n = n + 1
+        end
+        return all
+    end
+
+    function api.Commands.Kick(ply, reason)
+        RunConsoleCommand("ulx", "kick", "$" .. ply:UserID(), reason)
+    end
+
+    function api.Commands.BanID64(steamid64, length, reason)
+        RunConsoleCommand("ulx", "banid", util.SteamIDFrom64(steamid64), length / 60, reason) -- ulx ban length is in minutes, dumb
+    end
+
+    function api.Commands.Ban(ply, length, reason)
+        return api.Commands.BanID64(ply:SteamID64(), length, reason)
+    end
+
+    function api.Commands.UnbanID64(steamid64)
+        RunConsoleCommand("ulx", "unban", util.SteamIDFrom64(steamid64))
+    end
+
+    function api.Commands.Freeze(ply)
+        RunConsoleCommand("ulx", "freeze", "$" .. ply:UserID())
+    end
+
+    function api.Commands.Unfreeze(ply)
+        RunConsoleCommand("ulx", "unfreeze", "$" .. ply:UserID())
+    end
+
+    if CLIENT then
+        function api.Commands.Goto(ply)
+            RunConsoleCommand("ulx", "goto", "$" .. ply:UserID())
+        end
+
+        function api.Commands.Bring(ply)
+            RunConsoleCommand("ulx", "bring", "$" .. ply:UserID())
+        end
+
+        function api.Commands.Return(ply)
             RunConsoleCommand("ulx", "return", "$" .. ply:UserID())
-        elseif is_xadmin("1") or is_xadmin("2") then
-            RunConsoleCommand("xadmin", "return", ply:SteamID())
-        elseif sAdmin then
-            RunConsoleCommand("sa", "return", ply:SteamID64())
-        else
-            error("No supported admin mod found!")
         end
     end
+
+    return api
 end
+)
+
+Add("sAdmin",
+    function()
+        local sAdmin = sAdmin
+        if not sAdmin then return end
+
+        local api = { Commands = {} }
+
+        function api.AddPermission(name, min_access, category)
+            sAdmin.registerPermission(name, category, false, true)
+        end
+
+        function api.GetPermissions()
+            local all, n = {}, 1
+            for perm in pairs(sAdmin.getPermissionsKeys()) do
+                all[n] = perm; n = n + 1
+            end
+            return all
+        end
+
+        api.PlayerHasPermission = sAdmin.hasPermission
+        api.GetPlayersWithPermission = sAdmin.FindByPerm
+
+        function api.GetPlayerRoles(ply)
+            return { PLAYER.GetUserGroup(ply) }
+        end
+
+        function api.GetRoles()
+            local all, n = {}, 1
+            for role_name in pairs(sAdmin.usergroups) do
+                all[n] = role_name; n = n + 1
+            end
+            return all
+        end
+
+        function api.Commands.Kick(ply, reason)
+            RunConsoleCommand("sa", "kick", ply:SteamID64(), reason)
+        end
+
+        function api.Commands.BanID64(steamid64, length, reason)
+            RunConsoleCommand("sa", "banid", steamid64, length, reason)
+        end
+
+        function api.Commands.Ban(ply, length, reason)
+            return api.Commands.BanID64(ply:SteamID64(), length, reason)
+        end
+
+        function api.Commands.UnbanID64(steamid64)
+            RunConsoleCommand("sa", "unban", steamid64)
+        end
+
+        function api.Commands.Freeze(ply)
+            RunConsoleCommand("sa", "freeze", ply:SteamID64())
+        end
+
+        function api.Commands.Unfreeze(ply)
+            RunConsoleCommand("sa", "unfreeze", ply:SteamID64())
+        end
+
+        if CLIENT then
+            function api.Commands.Goto(ply)
+                RunConsoleCommand("sa", "goto", ply:SteamID64())
+            end
+
+            function api.Commands.Bring(ply)
+                RunConsoleCommand("sa", "bring", ply:SteamID64())
+            end
+
+            function api.Commands.Return(ply)
+                RunConsoleCommand("sa", "return", ply:SteamID64())
+            end
+        end
+
+        return api
+    end
+)
+
+Papi.Load()
 
 return Papi
