@@ -74,6 +74,10 @@ function Papi.OnRoleChanges(identifier, func)
     queue(Papi.API.OnRoleChanges, identifier, func)
 end
 
+function Papi.IsSteamid64Banned(steamid64, callback)
+    queue(Papi.API.IsSteamid64Banned, steamid64, callback)
+end
+
 function Papi.Commands.Kick(ply, reason)
     queue(Papi.API.Commands.Kick, ply, reason)
 end
@@ -190,6 +194,19 @@ Add("Lyn", function()
         end)
     end
 
+    if SERVER then
+        function api.IsSteamid64Banned(steamid64, callback)
+            Lyn.Player.GetBanInfo(steamid64, function(err, res)
+                -- err is already handled by Lyn
+                if err or not res then
+                    callback(false)
+                    return
+                end
+                callback(true)
+            end)
+        end
+    end
+
     function api.Commands.Kick(ply, reason)
         Lyn.Command.Execute("kick", ply, reason)
     end
@@ -301,6 +318,18 @@ Add("SAM", function()
 
             func(nil, steamid64)
         end)
+    end
+
+    if SERVER then
+        function api.IsSteamid64Banned(steamid64, callback)
+            sam.player.is_banned(util.SteamIDFrom64(steamid64), function(res)
+                if res then
+                    callback(true)
+                else
+                    callback(false)
+                end
+            end)
+        end
     end
 
     function api.Commands.Kick(ply, reason)
@@ -418,6 +447,21 @@ Add("ULX", function()
             local steamid64 = util.SteamIDTo64(steamid)
             func(ply, steamid64)
         end)
+    end
+
+    if SERVER then
+        -- https://github.com/TeamUlysses/ulib/blob/147657e31a15bdcc5b5fec89dd9f5650aebeb54a/lua/ulib/server/bans.lua#L59
+        function api.IsSteamid64Banned(steamid64, callback)
+            local steamid = util.SteamIDFrom64(steamid64)
+            local ban_data = ULib.bans[steamid]
+            if not ban_data
+                or (not ban_data.admin and not ban_data.reason and not ban_data.unban and not ban_data.time)
+            then
+                callback(false)
+                return
+            end
+            callback(true)
+        end
     end
 
     function api.Commands.Kick(ply, reason)
