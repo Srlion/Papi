@@ -16,6 +16,24 @@ local function is_xadmin(t)
     end
 end
 
+function Papi.GetActiveAdminMod()
+    if Lyn then
+        return "Lyn"
+    elseif sam then
+        return "SAM"
+    elseif ULib then
+        return "ULX"
+    elseif is_xadmin("1") then
+        return "xAdmin1"
+    elseif is_xadmin("2") then
+        return "xAdmin2"
+    elseif sAdmin then
+        return "sAdmin"
+    else
+        return nil
+    end
+end
+
 function Papi.AddPermission(name, min_access, category)
     assert(type(name) == "string", "Permission name must be a string")
     assert(type(min_access) == "string", "Minimum access level must be a string")
