@@ -1,5 +1,3 @@
----@diagnostics.globals Lyn sam ULib xAdmin sAdmin
-
 local Papi = {}
 
 local player = player
