@@ -1,4 +1,5 @@
 local Papi = {}
+Papi.Commands = {}
 
 local player = player
 local type = type
@@ -191,7 +192,7 @@ function Papi.GetRoles()
     error("No supported admin mod found!")
 end
 
-function Papi.Kick(ply, reason)
+function Papi.Commands.Kick(ply, reason)
     if Lyn then
         Lyn.Command.Execute("kick", ply, reason)
     elseif sam then
@@ -207,7 +208,7 @@ function Papi.Kick(ply, reason)
     end
 end
 
-function Papi.BanID64(steamid64, length, reason)
+function Papi.Commands.BanID64(steamid64, length, reason)
     if Lyn then
         Lyn.Command.Execute("banid", steamid64, length, reason)
     elseif sam then
@@ -223,11 +224,11 @@ function Papi.BanID64(steamid64, length, reason)
     end
 end
 
-function Papi.Ban(ply, length, reason)
-    return Papi.BanID64(ply:SteamID64(), length, reason)
+function Papi.Commands.Ban(ply, length, reason)
+    return Papi.Commands.BanID64(ply:SteamID64(), length, reason)
 end
 
-function Papi.UnbanID64(steamid64)
+function Papi.Commands.UnbanID64(steamid64)
     if Lyn then
         Lyn.Command.Execute("unban", steamid64)
     elseif sam then
@@ -243,7 +244,7 @@ function Papi.UnbanID64(steamid64)
     end
 end
 
-function Papi.Freeze(ply)
+function Papi.Commands.Freeze(ply)
     if Lyn then
         Lyn.Command.Execute("freeze", ply)
     elseif sam then
@@ -259,7 +260,7 @@ function Papi.Freeze(ply)
     end
 end
 
-function Papi.Unfreeze(ply)
+function Papi.Commands.Unfreeze(ply)
     if Lyn then
         Lyn.Command.Execute("unfreeze", ply)
     elseif sam then
