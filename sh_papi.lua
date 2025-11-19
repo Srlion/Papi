@@ -9,6 +9,7 @@ local pairs = pairs
 local PLAYER = FindMetaTable("Player")
 
 local function is_xadmin(t)
+    if not xAdmin then return false end
     if t == "1" then
         return xAdmin.Categories ~= nil
     elseif t == "2" then
