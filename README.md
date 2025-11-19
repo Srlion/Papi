@@ -12,6 +12,17 @@ A unified API for Garry's Mod admin mods. Write once, work with any supported ad
 
 ## Quick Usage
 
+### Active Admin Mod
+
+```lua
+local active_mod = Papi.GetActiveAdminMod()
+if active_mod then
+    print("Active admin mod:", active_mod) -- e.g. "Lyn", "SAM", "ULX"
+else
+    print("No supported admin mod detected")
+end
+```
+
 ### Permissions
 
 ```lua
