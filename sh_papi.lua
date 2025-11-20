@@ -334,12 +334,34 @@ Add("SAM", function()
         end
     end
 
+    local CD = 0.70
+    local last_run = 0
+    local function run_command(...)
+        if SERVER then
+            RunConsoleCommand("sam", ...)
+            return
+        end
+        local now = SysTime()
+        local diff = now - last_run
+        if diff >= CD then
+            last_run = now
+            RunConsoleCommand("sam", ...)
+        else
+            local args, n = { ... }, select("#", ...)
+            last_run = last_run + CD
+            local delay = last_run - now
+            timer.Simple(delay, function()
+                RunConsoleCommand("sam", unpack(args, 1, n))
+            end)
+        end
+    end
+
     function api.Commands.Kick(ply, reason)
-        RunConsoleCommand("sam", "kick", "#" .. ply:EntIndex(), reason)
+        run_command("kick", "#" .. ply:EntIndex(), reason)
     end
 
     function api.Commands.BanID64(steamid64, length, reason)
-        RunConsoleCommand("sam", "banid", steamid64, length / 60, reason) -- sam ban length is in minutes, dumb
+        run_command("banid", steamid64, length / 60, reason) -- sam ban length is in minutes, dumb
     end
 
     function api.Commands.Ban(ply, length, reason)
@@ -347,28 +369,28 @@ Add("SAM", function()
     end
 
     function api.Commands.UnbanID64(steamid64)
-        RunConsoleCommand("sam", "unban", steamid64)
+        run_command("unban", steamid64)
     end
 
     function api.Commands.Freeze(ply)
-        RunConsoleCommand("sam", "freeze", "#" .. ply:EntIndex())
+        run_command("freeze", "#" .. ply:EntIndex())
     end
 
     function api.Commands.Unfreeze(ply)
-        RunConsoleCommand("sam", "unfreeze", "#" .. ply:EntIndex())
+        run_command("unfreeze", "#" .. ply:EntIndex())
     end
 
     if CLIENT then
         function api.Commands.Goto(ply)
-            RunConsoleCommand("sam", "goto", "#" .. ply:EntIndex())
+            run_command("goto", "#" .. ply:EntIndex())
         end
 
         function api.Commands.Bring(ply)
-            RunConsoleCommand("sam", "bring", "#" .. ply:EntIndex())
+            run_command("bring", "#" .. ply:EntIndex())
         end
 
         function api.Commands.Return(ply)
-            RunConsoleCommand("sam", "return", "#" .. ply:EntIndex())
+            run_command("return", "#" .. ply:EntIndex())
         end
     end
 
