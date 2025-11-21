@@ -4,11 +4,42 @@ if not sAdmin then return end
 -- To avoid cost of Player.__index lookups
 local PLAYER = FindMetaTable("Player")
 
+local NetMessageName = "Papi_sAdmin_" .. PAPI_UNIQUE_TAG
+local NET_TYPE_ROLE_CHANGE = 1
+local NET_BITS = 8
+
 ---@type PapiAPI
 local api = {
     Name = "sAdmin",
     Commands = {}
 }
+
+local ROLE_CHANGE_LISTENERS; if CLIENT then
+    ROLE_CHANGE_LISTENERS = {}
+end
+if SERVER then
+    util.AddNetworkString(NetMessageName)
+else
+    net.Receive(NetMessageName, function()
+        local change_type = net.ReadUInt(8)
+        if change_type == NET_TYPE_ROLE_CHANGE then
+            local steamid64 = net.ReadUInt64()
+            local ply = player.GetBySteamID64(steamid64)
+            for _, func in pairs(ROLE_CHANGE_LISTENERS) do
+                func(ply, steamid64)
+            end
+        end
+    end)
+end
+
+local send_role_change; if SERVER then
+    function send_role_change(steamid64)
+        net.Start(NetMessageName)
+        net.WriteUInt(NET_TYPE_ROLE_CHANGE, NET_BITS)
+        net.WriteUInt64(steamid64)
+        net.Broadcast()
+    end
+end
 
 function api.AddPermission(name, min_access, category)
     sAdmin.registerPermission(name, category, false, true)
@@ -35,6 +66,32 @@ function api.GetRoles()
         all[n] = role_name; n = n + 1
     end
     return all
+end
+
+function api.OnRoleChanges(identifier, func)
+    -- sAdmin does not call role change hooks on clientside
+    if CLIENT then
+        ROLE_CHANGE_LISTENERS[identifier] = func
+        return
+    end
+
+    if not func then
+        hook.Remove("CAMI.PlayerUsergroupChanged", identifier)
+        return
+    end
+
+    hook.Add("CAMI.PlayerUsergroupChanged", identifier, function(ply, _, _, source)
+        if source ~= "sAdmin" then return end
+
+        send_role_change(ply:SteamID64())
+        func(ply, ply:SteamID64())
+    end)
+end
+
+if SERVER then
+    function api.IsSteamid64Banned(steamid64, callback)
+        callback(sAdmin.isBanned(steamid64))
+    end
 end
 
 function api.Commands.Kick(ply, reason)
