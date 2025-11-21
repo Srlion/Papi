@@ -17,7 +17,9 @@ local api = {
     Commands = {},
 }
 
-local ROLE_CHANGE_LISTENERS = {}
+local ROLE_CHANGE_LISTENERS; if CLIENT then
+    ROLE_CHANGE_LISTENERS = {}
+end
 if SERVER then
     util.AddNetworkString(NetMessageName)
 else
