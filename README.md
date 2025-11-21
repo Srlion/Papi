@@ -9,7 +9,17 @@ A unified API for Garry's Mod admin mods. Write once, work with any supported ad
 - [**ULX**](https://github.com/TeamUlysses/ulx)
 - [**sAdmin**](https://www.gmodstore.com/market/view/sadmin-the-best-admin-mod)
 
+## Getting Started
+
+1. Download `sh_papi.lua` from [GitHub releases](https://github.com/Srlion/Papi/releases/latest).
+2. Add `sh_papi.lua` to your addon.
+3. Run `include` on `sh_papi.lua`. (It's already calls AddCSLuaFile for you!)
+
 ## Quick Usage
+
+**Not all functions can be used at startup because the loading order of admin mods matters. You can only use Papi once all addons have finished loading.**
+
+To put it another way: to make sure the server’s active admin mod is fully loaded, we need a reliable point where everything is consistent. Since an admin mod might load earlier or later, Papi should only be used after all loading is complete.
 
 ### Active Admin Mod
 
@@ -25,7 +35,7 @@ end
 ### Permissions
 
 ```lua
-local Papi = include("papi.lua")
+local Papi = include("sh_papi.lua")
 
 -- Add a permission
 Papi.AddPermission("my_permission", "admin", "MyCategory")
