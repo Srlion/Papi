@@ -1,0 +1,34 @@
+name: Build
+
+on: push
+
+jobs:
+  now:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        shell: pwsh
+        run: |
+          python build.py
+          copy out/sh_papi.lua C:\sh_papi.lua
+
+      - name: Set Unix Timestamp
+        id: time
+        shell: pwsh
+        run: |
+          # Get the current Unix time
+          $timestamp = Get-Date -UFormat %s
+          # Save the timestamp as an output variable
+          echo "timestamp=$timestamp" >> $env:GITHUB_OUTPUT
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.time.outputs.timestamp }}
+          allowUpdates: true
+          artifacts: C:\sh_papi.lua
