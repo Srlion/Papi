@@ -15,7 +15,7 @@ jobs:
         shell: pwsh
         run: |
           python build.py
-          copy out/sh_papi.lua C:\sh_papi.lua
+          copy out/sh_papi.lua ~/sh_papi.lua
 
       - name: Set Unix Timestamp
         id: time
@@ -31,4 +31,4 @@ jobs:
         with:
           tag: ${{ steps.time.outputs.timestamp }}
           allowUpdates: true
-          artifacts: C:\sh_papi.lua
+          artifacts: ~/sh_papi.lua
