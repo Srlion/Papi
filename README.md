@@ -21,6 +21,8 @@ A unified API for Garry's Mod admin mods. Write once, work with any supported ad
 
 To put it another way: to make sure the server’s active admin mod is fully loaded, we need a reliable point where everything is consistent. Since an admin mod might load earlier or later, Papi should only be used after all loading is complete.
 
+**You must call Papi.AddPermission on both server and client.**
+
 ### Active Admin Mod
 
 ```lua
