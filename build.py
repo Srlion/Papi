@@ -6,7 +6,7 @@ import sys
 import time
 
 BASE_DIR = "src"
-MAIN_FILE = "sh_papi.lua"
+MAIN_FILE = "main.lua"
 OUTPUT_FILE = "out/sh_papi.lua"
 ADMIN_MODS_DIR = "admin_mods"
 ADMIN_PLACEHOLDER = "--[[ Admin Mod Loaders ]] --"
