@@ -132,8 +132,6 @@ local Papi = include("path/to/papi.lua")
 - More common commands
 - FAdmin support maybe?
 - Allow registering custom commands? (Will be simple wrapper functions)
-- Network ULX's role changes to clientside (Waiting for GLUAX to force people to use releases to have unique net message names)
-- Using ULX, when registering permissions, we will store inside Papi (only for ULX and clientside) because ULib.ucl.accessStrings is not available clientside
 
 ## Credits
 
